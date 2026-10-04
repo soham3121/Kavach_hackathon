@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,  "name": "Kavach - Privacy Guardian",
+  "version": "1.0.0",
+  "description": "Advanced privacy protection with real-time tracker blocking, AI-powered privacy policy analysis, and data flow visualization",
+  "icons": {
+    "16": "logo.png",
+    "32": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  },  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "webRequest",
+    "webNavigation",
+    "declarativeNetRequest",
+    "scripting",
+    "cookies",
+    "browsingData"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://generativelanguage.googleapis.com/"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Kavach Privacy Guardian",
+    "default_icon": {
+      "16": "logo.png",
+      "32": "logo.png",
+      "48": "logo.png",
+      "128": "logo.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["injected.js", "fingerprint-agent.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "tracker_rules",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://kavach-hackolution.onrender.com https://*.onrender.com http://localhost:3000 https://generativelanguage.googleapis.com"
+  }
+}
