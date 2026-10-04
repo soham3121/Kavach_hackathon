@@ -1163,7 +1163,9 @@ const backgroundService = new BackgroundService();
 // Gemini API proxy for content scripts/popup (CSP bypass)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getFriendlyTrackerName' && request.domain) {
-        fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=AIzaSyBrXnnwn0--IEWqrNS4V4HPqlAuTr3TB9k`, {
+        // NOTE: Replace YOUR_GEMINI_API_KEY with your key via environment variable or chrome.storage
+        const geminiKey = process.env.GEMINI_API_KEY || '';
+        fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
