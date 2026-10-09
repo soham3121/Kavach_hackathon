@@ -135,10 +135,11 @@ class BackgroundService {
     );
   }
 
-  private setupTabListeners() {
+    private setupTabListeners() {
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       if (changeInfo.status === 'complete' && tab.url && this.isValidHttpUrl(tab.url)) {
         this.initializeSiteData(tab.url);
+        this.refreshBadgeForTab(tabId, tab.url);
       }
     });
 
@@ -147,11 +148,29 @@ class BackgroundService {
         const tab = await chrome.tabs.get(activeInfo.tabId);
         if (tab.url && this.isValidHttpUrl(tab.url)) {
           this.initializeSiteData(tab.url);
+          this.refreshBadgeForTab(activeInfo.tabId, tab.url);
         }
       } catch (error) {
         // Silently handle tab access errors
       }
     });
+  }
+
+  private async refreshBadgeForTab(tabId: number, url: string): Promise<void> {
+    try {
+      const domain = this.getDomainFromURL(url);
+      if (!domain) return;
+      const siteData = this.siteData.get(domain);
+      const count = siteData?.trackers.length || 0;
+      if (count > 0) {
+        await chrome.action.setBadgeText({ tabId, text: String(count) });
+        await chrome.action.setBadgeBackgroundColor({ tabId, color: '#ef4444' });
+      } else {
+        await chrome.action.setBadgeText({ tabId, text: '' });
+      }
+    } catch (error) {
+      // Silently handle badge errors
+    }
   }
 
   private isValidHttpUrl(url: string): boolean {
@@ -187,11 +206,35 @@ class BackgroundService {
         };
         siteData.trackers.push(newTracker);
       }
-      siteData.trustScore = TrustScoreCalculator.calculateScore(siteData.trackers);
+            siteData.trustScore = TrustScoreCalculator.calculateScore(siteData.trackers);
       this.updateDataFlow(siteData, sourceDomain, trackerDomain);
       this.siteData.set(sourceDomain, siteData);
+      this.updateBadge(sourceDomain, siteData.trackers.length);
     } catch (error) {
       // Silently handle tracking errors to prevent extension crashes
+    }
+  }
+
+  private async updateBadge(domain: string, trackerCount: number): Promise<void> {
+    try {
+      const tabs = await chrome.tabs.query({ url: `*://${domain}/*` });
+      for (const tab of tabs) {
+        if (!tab.id) continue;
+        if (trackerCount > 0) {
+          await chrome.action.setBadgeText({
+            tabId: tab.id,
+            text: String(trackerCount),
+          });
+          await chrome.action.setBadgeBackgroundColor({
+            tabId: tab.id,
+            color: '#ef4444',
+          });
+        } else {
+          await chrome.action.setBadgeText({ tabId: tab.id, text: '' });
+        }
+      }
+    } catch (error) {
+      // Silently handle badge errors
     }
   }
 
